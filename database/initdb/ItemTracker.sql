@@ -120,7 +120,8 @@ BEFORE INSERT ON USER_BORROW_TOOLS
             FROM USER_BORROW_TOOLS
             INNER JOIN USER
                 ON USER_BORROW_TOOLS.owner_email = USER.email
-            WHERE USER_BORROW_TOOLS.item_id = new.item_id;
+            WHERE USER_BORROW_TOOLS.item_id = new.item_id
+                AND USER.owner_id = new.owner_id;
             
             SELECT totalQuantity - (borrowedQuantity + new.quantity) INTO remainingQuantity;
             IF remainingQuantity < 0 THEN
@@ -159,7 +160,8 @@ BEFORE UPDATE ON USER_BORROW_TOOLS
             FROM USER_BORROW_TOOLS
             INNER JOIN USER
                 ON USER_BORROW_TOOLS.owner_email = USER.email
-            WHERE USER_BORROW_TOOLS.item_id = new.item_id;
+            WHERE USER_BORROW_TOOLS.item_id = new.item_id
+                AND USER.owner_id = new.owner_id;
 
             SELECT totalQuantity - (borrowedQuantity + new.quantity) INTO remainingQuantity;
             IF remainingQuantity < 0 THEN
