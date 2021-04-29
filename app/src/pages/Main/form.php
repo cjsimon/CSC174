@@ -1,4 +1,4 @@
-<?
+<?php
 
 if($debug) {
     $rawFormData = var_export($_POST, true);
@@ -170,3 +170,4 @@ function borrowUserItem($borrowerEmail, $ownerEmail, $itemId, $quantity) {
         return 'No Results';
     }
 }
+?>

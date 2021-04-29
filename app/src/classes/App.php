@@ -30,3 +30,4 @@ class App {
         require('pages/Main/main.php');
     }
 }
+?>

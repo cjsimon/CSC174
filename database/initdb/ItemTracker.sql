@@ -90,6 +90,84 @@ CREATE TABLE USER_BORROW_TOOLS (
 CHARACTER SET 'utf8mb4'
 COLLATE 'utf8mb4_unicode_520_ci';
 
+DROP TRIGGER IF EXISTS enforce_insert_borrowing_limitations;
+CREATE TRIGGER enforce_insert_borrowing_limitations
+BEFORE INSERT ON USER_BORROW_TOOLS
+    FOR EACH ROW
+        BEGIN
+            DECLARE item_type CHAR;
+            DECLARE totalQuantity INT;
+            DECLARE borrowedQuantity INT;
+            DECLARE remainingQuantity INT;
+
+            SELECT type_flag INTO item_type
+            FROM ITEM
+            WHERE item_id = new.item_id;
+            
+            IF item_type = 'A' THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Appliances cannot be borrowed';
+            END IF;
+
+            SELECT OWNERS_ITEMS.quantity INTO totalQuantity
+            FROM OWNERS_ITEMS
+            INNER JOIN USER
+                ON OWNERS_ITEMS.owner_id = USER.owner_id
+            WHERE USER.email = new.owner_email
+                AND OWNERS_ITEMS.item_id = new.item_id;
+            
+            SELECT SUM(USER_BORROW_TOOLS.quantity) INTO borrowedQuantity
+            FROM USER_BORROW_TOOLS
+            INNER JOIN USER
+                ON USER_BORROW_TOOLS.owner_email = USER.email
+            WHERE USER_BORROW_TOOLS.item_id = new.item_id;
+            
+            SELECT totalQuantity - (borrowedQuantity + new.quantity) INTO remainingQuantity;
+            IF remainingQuantity < 0 THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Owner has insufficient quantity of item to lend';
+            END IF;
+        END;
+
+DROP TRIGGER IF EXISTS enforce_update_borrowing_limitations;
+CREATE TRIGGER enforce_update_borrowing_limitations
+BEFORE UPDATE ON USER_BORROW_TOOLS
+    FOR EACH ROW
+        BEGIN
+            DECLARE item_type CHAR;
+            DECLARE totalQuantity INT;
+            DECLARE borrowedQuantity INT;
+            DECLARE remainingQuantity INT;
+
+            SELECT type_flag INTO item_type
+            FROM ITEM
+            WHERE item_id = new.item_id;
+
+            IF item_type = 'A' THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Appliances cannot be borrowed';
+            END IF;
+
+            SELECT OWNERS_ITEMS.quantity INTO totalQuantity
+            FROM OWNERS_ITEMS
+            INNER JOIN USER
+                ON OWNERS_ITEMS.owner_id = USER.owner_id
+            WHERE USER.email = new.owner_email
+                AND OWNERS_ITEMS.item_id = new.item_id;
+
+            SELECT SUM(USER_BORROW_TOOLS.quantity) INTO borrowedQuantity
+            FROM USER_BORROW_TOOLS
+            INNER JOIN USER
+                ON USER_BORROW_TOOLS.owner_email = USER.email
+            WHERE USER_BORROW_TOOLS.item_id = new.item_id;
+
+            SELECT totalQuantity - (borrowedQuantity + new.quantity) INTO remainingQuantity;
+            IF remainingQuantity < 0 THEN
+                SIGNAL SQLSTATE '45000'
+                SET MESSAGE_TEXT = 'Owner has insufficient quantity of item to lend';
+            END IF;
+        END;
+
 # Insert Data
 INSERT INTO OWNER(owner_id) VALUES
     ('555555555'),
@@ -126,9 +204,9 @@ INSERT INTO OWNERS_ITEMS(owner_id, item_id, quantity) VALUES
     ('333333333', '224455660', '2');
     
 INSERT INTO USER_BORROW_TOOLS(borrower_email, owner_email, item_id, quantity) VALUES
-    ('betty@gmail.com', 'someguy@somerandomguy.com', '112233445', '1'),
-    ('apj@gmail.com', 'JJ@gmail.com', '224455660', '2'),
-    ('betty@gmail.com', 'JJ@gmail.com', '332211442', '1');
+    ('betty@gmail.com', 'someguy@somerandomguy.com', '112233445', '1');
+    #('apj@gmail.com', 'JJ@gmail.com', '224455660', '2')
+    #('betty@gmail.com', 'JJ@gmail.com', '332211442', '1')
 
 # Function
 DELIMITER $$
@@ -137,7 +215,7 @@ RETURNS INT
 BEGIN
     DECLARE numItems INT;
     SELECT count(*) INTO numItems
-    FROM OWNERS_ITEMS O
+    FROM OWNERS_ITEMS AS O
     WHERE O.owner_id = owner_id;
     RETURN numItems;
 END; $$

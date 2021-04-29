@@ -99,7 +99,7 @@
     
     <!--div id="form-results" style="padding: 10px; resize: both; overflow: auto; height: 400px; border: 1px solid black;"-->
     <div id="form-results">
-        <?
+        <?php
             // Process form results
             include('form.php');
         ?>
