@@ -1,4 +1,7 @@
 <?php
+
+class DatabaseQueryException extends PDOException {};
+
 /** Static MySQL db wrapper for connecting to a db and executing sql queries */
 class MySQL {
     // The singlton PHP Database Object (PDO) Connection
@@ -10,11 +13,11 @@ class MySQL {
     // The last executed SQL query
     public static $query;
     
-    // The last executed SQL query associative results set
-    public static $results;
-    
-    // The number of rows from the last executed query
+    // The number of rows returned from the last executed query
     public static $rowCount;
+    
+    // The last executed query results set
+    public static $results;
     
     /**
      * Setup the singleton db instance
@@ -34,7 +37,7 @@ class MySQL {
         
         // Set PDO to discard emulated prepared statements, as they are not safe
         self::$connection->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-        // Set PDO error mode
+        // Set PDO error mode to throw exceptions
         self::$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     }
     
@@ -64,11 +67,10 @@ class MySQL {
             // Get the number of rows from the executed $query
             self::$rowCount = $query->rowCount();
             
-            // Fetch the associative $results of the executed $query
-            self::$results = $query->fetch(PDO::FETCH_ASSOC);
+            // Save the executed $query as a results set that can be fetched
+            self::$results = $query;
         } catch(PDOException $e) {
-            // An error occurred. Terminate the application
-            exit($e->getMessage());
+            throw new DatabaseQueryException($e);
         }
     }
 }

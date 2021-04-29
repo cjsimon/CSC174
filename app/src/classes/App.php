@@ -16,16 +16,17 @@ class App {
         // Establish the App DB Connection
         // @TODO: Update with your ecs db credentials if hosting on athena
         $dbhost   = 'database:3306'; // athena:3306
-        $dbname   = 'Project';       // cs174###
+        $dbname   = 'ItemTracker';   // cs174###
         $dbuser   = 'root';          // cs174###
         $dbpass   = 'pass';          // ********
         self::$db = MySQL::getConnection($dbhost, $dbname, $dbuser, $dbpass);
+        
+        $GLOBALS['DB'] = self::$db;
     }
     
     /** App Entrypoint */
     public function start() {
-        // Load a webpage
-        require('pages/main.php');
+        // Load a page
+        require('pages/Main/main.php');
     }
 }
-?>
